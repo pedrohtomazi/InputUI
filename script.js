@@ -33,18 +33,12 @@ $(function () {
     });
 });
 
-function renderInputModal(_) {
-    const gameName = _.gameName || "fivem";
-    const modalWidth = _.width || "md"; 
-    const modalPos = _.position || "center"; // "center", "left", "right", "top-right", etc.
-    const showBackdrop = _.backdrop !== false ? "" : "no-backdrop"; // Se for false, tira o blur do fundo
-    const confirmText = (_.messages && _.messages.confirm) ? _.messages.confirm : "Confirmar";
-    const cancelText = (_.messages && _.messages.cancel) ? _.messages.cancel : "Cancelar";
-
+// Função auxiliar que gera o HTML de uma lista de inputs
+function buildFieldsHtml(inputsList, prefix) {
     let fieldsHtml = "";
 
-    (_.inputs || []).forEach((field, index) => {
-        const fieldId = field.id || `input_field_${index}`;
+    (inputsList || []).forEach((field, index) => {
+        const fieldId = field.id || `input_${prefix}_${index}`;
         const sizeClass = `size-${field.size || "100"}`;
         const reqStar = field.required ? `<span class="requiredStar">*</span>` : "";
         const descHtml = field.description ? `<div class="inputDescription">${field.description}</div>` : "";
@@ -103,7 +97,7 @@ function renderInputModal(_) {
                     const sel = hStr === defH ? "selected" : "";
                     hoursHtml += `<div class="timeCell hourCell ${sel}" data-val="${hStr}">${hStr}h</div>`;
                 }
-                for (let m = 0; m < 60; m += 5) { // Incrementos de 5 min (ou m++ para todos os minutos)
+                for (let m = 0; m < 60; m += 5) {
                     const mStr = String(m).padStart(2, "0");
                     const sel = mStr === defM ? "selected" : "";
                     minsHtml += `<div class="timeCell minCell ${sel}" data-val="${mStr}">${mStr}m</div>`;
@@ -304,30 +298,83 @@ function renderInputModal(_) {
         `;
     });
 
-    $("#nuiInput").html(`
-        <div id="${gameName}" class="pos-${modalPos} ${showBackdrop}">
-            <div class="inputModal modal-${modalWidth}">
-                <div class="modalHeader">
-                    <div class="modalTitle">${_.title || "Formulário de Entrada"}</div>
-                    ${_.subtitle ? `<div class="modalSubtitle">${_.subtitle}</div>` : ""}
-                </div>
+    return fieldsHtml;
+}
 
-                <div class="modalBody">
-                    ${fieldsHtml}
-                </div>
+function renderInputModal(_) {
+    const gameName = _.gameName || "fivem";
+    const showBackdrop = _.backdrop !== false ? "" : "no-backdrop";
+    const confirmText = (_.messages && _.messages.confirm) ? _.messages.confirm : "Confirmar";
+    const cancelText = (_.messages && _.messages.cancel) ? _.messages.cancel : "Cancelar";
 
-                <div class="modalFooter">
+    // MODO 1: MÚLTIPLOS PAINÉIS EM CANTOS DIFERENTES (_.panels)
+    if (Array.isArray(_.panels) && _.panels.length > 0) {
+        let panelsHtml = "";
+
+        _.panels.forEach((panel, pIndex) => {
+            const pPos = panel.position || "left";
+            const pWidth = panel.width || "sm";
+            const fieldsHtml = buildFieldsHtml(panel.inputs, `p${pIndex}`);
+
+            panelsHtml += `
+                <div class="panelSlot slot-${pPos}">
+                    <div class="inputModal modal-${pWidth}">
+                        ${panel.title ? `
+                            <div class="modalHeader">
+                                <div class="modalTitle">${panel.title}</div>
+                                ${panel.subtitle ? `<div class="modalSubtitle">${panel.subtitle}</div>` : ""}
+                            </div>
+                        ` : ""}
+                        <div class="modalBody">
+                            ${fieldsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        $("#nuiInput").html(`
+            <div id="${gameName}" class="multiPanelContainer ${showBackdrop}">
+                ${panelsHtml}
+                <div class="multiFloatingFooter">
                     <button type="button" class="btnModal btnCancel" id="btnInputCancel">${cancelText}</button>
                     <button type="button" class="btnModal btnConfirm" id="btnInputConfirm">${confirmText}</button>
                 </div>
             </div>
-        </div>
-    `);
+        `);
+    } 
+    // MODO 2: PAINEL ÚNICO (Padrão)
+    else {
+        const modalWidth = _.width || "md";
+        const modalPos = _.position || "center";
+        const fieldsHtml = buildFieldsHtml(_.inputs, "single");
+
+        $("#nuiInput").html(`
+            <div id="${gameName}" class="pos-${modalPos} ${showBackdrop}">
+                <div class="inputModal modal-${modalWidth}">
+                    <div class="modalHeader">
+                        <div class="modalTitle">${_.title || "Formulário de Entrada"}</div>
+                        ${_.subtitle ? `<div class="modalSubtitle">${_.subtitle}</div>` : ""}
+                    </div>
+
+                    <div class="modalBody">
+                        ${fieldsHtml}
+                    </div>
+
+                    <div class="modalFooter">
+                        <button type="button" class="btnModal btnCancel" id="btnInputCancel">${cancelText}</button>
+                        <button type="button" class="btnModal btnConfirm" id="btnInputConfirm">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
 
     $("#nuiInput").css("display", "block");
     bindInputEvents();
 }
 
+// ESTA FUNÇÃO ESTAVA FALTANDO NO SEU CÓDIGO COLADO:
 function bindInputEvents() {
     // Botões - e + do Input Number
     $(".numBtn").on("click", function () {
@@ -491,8 +538,22 @@ function submitInputModal() {
     let hasError = false;
     let results = {};
 
-    (activeConfig.inputs || []).forEach((field, index) => {
-        const fieldId = field.id || `input_field_${index}`;
+    // Junta os inputs tanto do modo único quanto do modo multi-painel
+    let allInputs = [];
+    if (Array.isArray(activeConfig.panels) && activeConfig.panels.length > 0) {
+        activeConfig.panels.forEach((p, pIdx) => {
+            (p.inputs || []).forEach((f, fIdx) => {
+                allInputs.push({ ...f, _fallbackId: `input_p${pIdx}_${fIdx}` });
+            });
+        });
+    } else {
+        (activeConfig.inputs || []).forEach((f, fIdx) => {
+            allInputs.push({ ...f, _fallbackId: `input_single_${fIdx}` });
+        });
+    }
+
+    allInputs.forEach((field) => {
+        const fieldId = field.id || field._fallbackId;
         const groupEl = $(`.inputGroup[data-field-id="${fieldId}"]`);
         let value = null;
 
@@ -636,45 +697,57 @@ $(function () {
             "overflow": "hidden"
         });
 
+        // Exemplo abrindo 2 painéis (um na esquerda e outro na direita)
         window.postMessage({
             nuiType: "input",
             inputAction: "open",
             gameName: "fivem",
-            width: "lg",
-            title: "Painel de Configuração",
-            subtitle: "Visualização em tempo real pelo Live Server",
+            backdrop: false, // false deixa o meio da tela sem blur
             messages: {
-                confirm: "Confirmar",
+                confirm: "Confirmar Tudo",
                 cancel: "Cancelar"
             },
-            inputs: [
-                { id: "nome", type: "text", label: "Nome da Organização", placeholder: "Ex: Mecânica Sul", size: "50", required: true },
-                { id: "senha", type: "password", label: "PIN do Cofre", default: "1234", size: "50", required: true },
-                
-                { id: "vagas", type: "number", label: "Limite de Membros", default: 25, min: 1, max: 100, size: "25", required: true },
-                { id: "categoria", type: "select", label: "Tipo de Setor", size: "50", default: "ilegal", options: [
-                    { label: "Legal / Empresa", value: "legal" },
-                    { label: "Organização Ilegal", value: "ilegal" },
-                    { label: "Governamental / Polícia", value: "gov" }
-                ]},
-                { id: "horario", type: "time", label: "Horário de Pico", default: "20:00", size: "25" },
-
-                { id: "cor_neon", type: "rgb", label: "Cor do Blip e Uniforme (RGB)", default: "#1FA5DE", size: "50" },
-                { id: "imposto", type: "range", label: "Taxa da Lavagem", min: 0, max: 100, default: 30, unit: "%", size: "50" },
-
-                { id: "permissoes", type: "checkbox", label: "Permissões do Cargo", size: "50", default: ["bau", "garagem"], options: [
-                    { label: "Acessar Baú", value: "bau" },
-                    { label: "Retirar Veículos", value: "garagem" },
-                    { label: "Recrutar", value: "recrutar" }
-                ]},
-                { id: "pagamento", type: "radio", label: "Método de Cobrança", size: "50", default: "banco", options: [
-                    { label: "Dinheiro Sujo", value: "sujo" },
-                    { label: "Transferência Bancária", value: "banco" }
-                ]},
-
-                { id: "ativo", type: "switch", label: "Status do Painel", placeholder: "Habilitar funcionamento imediato do ponto", default: true, size: "100" },
-
-                { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" }
+            panels: [
+                // PAINEL DA ESQUERDA
+                {
+                    position: "left",
+                    width: "md",
+                    title: "Dados da Organização",
+                    subtitle: "Identificação e acesso",
+                    inputs: [
+                        { id: "nome", type: "text", label: "Nome da Organização", placeholder: "Ex: Mecânica Sul", size: "50", required: true },
+                        { id: "senha", type: "password", label: "PIN do Cofre", default: "1234", size: "50", required: true },
+                        { id: "vagas", type: "number", label: "Limite", default: 25, min: 1, max: 100, size: "50", required: true },
+                        { id: "horario", type: "time", label: "Horário de Pico", default: "20:00", size: "50" },
+                        { id: "categoria", type: "select", label: "Tipo de Setor", size: "100", default: "ilegal", options: [
+                            { label: "Legal / Empresa", value: "legal" },
+                            { label: "Organização Ilegal", value: "ilegal" },
+                            { label: "Governamental / Polícia", value: "gov" }
+                        ]},
+                        { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" }
+                    ]
+                },
+                // PAINEL DA DIREITA
+                {
+                    position: "right",
+                    width: "md",
+                    title: "Estética & Permissões",
+                    subtitle: "Customização visual e taxas",
+                    inputs: [
+                        { id: "cor_neon", type: "rgb", label: "Cor do Blip e Uniforme (RGB)", default: "#1FA5DE", size: "100" },
+                        { id: "imposto", type: "range", label: "Taxa da Lavagem", min: 0, max: 100, default: 30, unit: "%", size: "100" },
+                        { id: "permissoes", type: "checkbox", label: "Permissões do Cargo", size: "100", default: ["bau", "garagem"], options: [
+                            { label: "Acessar Baú", value: "bau" },
+                            { label: "Retirar Veículos", value: "garagem" },
+                            { label: "Recrutar", value: "recrutar" }
+                        ]},
+                        { id: "pagamento", type: "radio", label: "Método de Cobrança", size: "100", default: "banco", options: [
+                            { label: "Dinheiro Sujo", value: "sujo" },
+                            { label: "Transferência Bancária", value: "banco" }
+                        ]},
+                        { id: "ativo", type: "switch", label: "Status do Painel", placeholder: "Habilitar funcionamento imediato", default: true, size: "100" }
+                    ]
+                }
             ]
         }, "*");
     }

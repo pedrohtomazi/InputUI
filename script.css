@@ -9,6 +9,69 @@
     color-scheme: dark; /* Garante que qualquer popup nativo restante fique escuro */
 }
 
+/* =========================================================
+   MODO MULTI-PAINEL (Inputs em lados opostos da tela)
+   ========================================================= */
+#nuiInput .multiPanelContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Deixa o meio da tela livre */
+}
+
+#nuiInput .panelSlot {
+    position: absolute;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+}
+
+/* Posições individuais de cada painel na tela */
+#nuiInput .slot-left,
+#nuiInput .slot-center-left {
+    left: 2.5vw;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#nuiInput .slot-right,
+#nuiInput .slot-center-right {
+    right: 2.5vw;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#nuiInput .slot-top-left { left: 2.5vw; top: 3.5vh; }
+#nuiInput .slot-top-center { left: 50%; top: 3.5vh; transform: translateX(-50%); }
+#nuiInput .slot-top-right { right: 2.5vw; top: 3.5vh; }
+
+#nuiInput .slot-bottom-left { left: 2.5vw; bottom: 10vh; }
+#nuiInput .slot-bottom-right { right: 2.5vw; bottom: 10vh; }
+
+#nuiInput .slot-center {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Barra de Ação Flutuante (Confirmar / Cancelar geral para múltiplos painéis) */
+#nuiInput .multiFloatingFooter {
+    position: absolute;
+    bottom: 3.5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.8vw;
+    padding: 1.2vh 1.4vw;
+    border-radius: 0.55vw;
+    background: linear-gradient(180deg, rgba(16, 22, 28, 0.96) 0%, rgba(10, 12, 16, 0.98) 100%);
+    border: 0.0521vw solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1vh 2.5vw rgba(0, 0, 0, 0.8);
+}
+
 #nuiInput {
     position: absolute;
     display: none;
