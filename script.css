@@ -10,46 +10,48 @@
 }
 
 /* =========================================================
-   MODO MULTI-PAINEL (Esquerda, Centro e Direita Simultâneos)
+   MODO MULTI-PAINEL (Esquerda, Centro e Direita Proporcionais)
    ========================================================= */
 #nuiInput .multiPanelContainer {
     position: relative;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* Deixa o fundo livre para interagir com o jogo */
+    pointer-events: none; /* Deixa o jogo livre no fundo */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2.5vw;
 }
 
 #nuiInput .panelSlot {
-    position: absolute;
+    position: relative;
     pointer-events: auto;
     display: flex;
     flex-direction: column;
-    gap: 1.5vh;
 }
 
-/* Posições dos 3 modais na tela */
+/* Posições e larguras automáticas para os 3 painéis simultâneos */
 #nuiInput .slot-left,
 #nuiInput .slot-center-left {
-    left: 2vw;
-    top: 50%;
-    transform: translateY(-50%);
+    width: 26vw; /* Painel esquerdo estreito */
 }
 
 #nuiInput .slot-center,
 #nuiInput .slot-middle {
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    width: 32vw; /* Painel central levemente mais quadrado */
 }
 
 #nuiInput .slot-right,
 #nuiInput .slot-center-right {
-    right: 2vw;
-    top: 50%;
-    transform: translateY(-50%);
+    width: 26vw; /* Painel direito estreito */
 }
 
-/* Barra de Ação Flutuante Inferior para Confirmar os 3 painéis juntos */
+/* Força os modais dentro dos slots a assumirem 100% da largura do slot */
+#nuiInput .panelSlot .inputModal {
+    width: 100% !important;
+}
+
+/* Barra de Ação Flutuante Inferior para Confirmar os 3 juntos */
 #nuiInput .multiFloatingFooter {
     position: absolute;
     bottom: 3.5vh;
