@@ -6,6 +6,7 @@
     outline: none;
     margin: 0;
     padding: 0;
+    color-scheme: dark; /* Garante que qualquer popup nativo restante fique escuro */
 }
 
 #nuiInput {
@@ -53,7 +54,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    max-height: 82vh;
+    max-height: 84vh;
     border-radius: 0.65vw;
     padding: 2.2vh 1.5vw;
     gap: 1.8vh;
@@ -121,15 +122,16 @@
     font-weight: 300;
 }
 
-/* Body & Sistema de Grid para Ajustar Tamanhos dos Inputs */
+/* Body & Sistema de Grid */
 #nuiInput .modalBody {
     display: flex;
     flex-wrap: wrap;
     gap: 1.4vh 0.8vw;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: visible;
     padding-right: 0.3vw;
-    max-height: 58vh;
+    padding-bottom: 1vh;
+    max-height: 60vh;
 }
 
 #nuiInput .modalBody::-webkit-scrollbar { width: 0.22vw; }
@@ -174,9 +176,8 @@
     margin-top: -0.3vh;
 }
 
-/* Estilização Base de Campos de Texto, Número, Data, Select e Textarea */
+/* Estilização Base de Campos */
 #nuiInput .inputControl,
-#nuiInput .selectControl,
 #nuiInput .textareaControl {
     width: 100%;
     height: 4.2vh;
@@ -189,6 +190,17 @@
     font-size: 0.7vw;
     font-weight: 400;
     transition: all 0.18s ease;
+}
+
+/* Remove setinhas brancas nativas de TODOS os inputs number */
+#nuiInput input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+#nuiInput input[type="number"]::-webkit-outer-spin-button,
+#nuiInput input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 #nuiInput .textareaControl {
@@ -205,16 +217,20 @@
 }
 
 #nuiInput #fivem .inputControl:focus,
-#nuiInput #fivem .selectControl:focus,
-#nuiInput #fivem .textareaControl:focus {
+#nuiInput #fivem .textareaControl:focus,
+#nuiInput #fivem .numberWrapper:focus-within,
+#nuiInput #fivem .customSelectTrigger.active,
+#nuiInput #fivem .timeTrigger.active {
     border-color: #1FA5DE;
     background: rgba(31, 165, 222, 0.05);
     box-shadow: 0 0 0.5vw rgba(31, 165, 222, 0.2);
 }
 
 #nuiInput #redm .inputControl:focus,
-#nuiInput #redm .selectControl:focus,
-#nuiInput #redm .textareaControl:focus {
+#nuiInput #redm .textareaControl:focus,
+#nuiInput #redm .numberWrapper:focus-within,
+#nuiInput #redm .customSelectTrigger.active,
+#nuiInput #redm .timeTrigger.active {
     border-color: #FFC342;
     background: rgba(255, 195, 66, 0.05);
     box-shadow: 0 0 0.5vw rgba(255, 195, 66, 0.2);
@@ -222,7 +238,9 @@
 
 /* Estado de Erro */
 #nuiInput .inputGroup.has-error .inputControl,
-#nuiInput .inputGroup.has-error .selectControl,
+#nuiInput .inputGroup.has-error .numberWrapper,
+#nuiInput .inputGroup.has-error .customSelectTrigger,
+#nuiInput .inputGroup.has-error .timeTrigger,
 #nuiInput .inputGroup.has-error .textareaControl,
 #nuiInput .inputGroup.has-error .colorWrapper {
     border-color: #E74C3C !important;
@@ -230,7 +248,221 @@
     animation: inputShake 0.25s ease;
 }
 
-/* Wrapper de Senha e Ícones Internos */
+/* =========================================================
+   NOVO SELETOR DE NÚMERO (Com Botões - e + Sóbrios)
+   ========================================================= */
+#nuiInput .numberWrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 4.2vh;
+    border-radius: 0.38vw;
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.0521vw solid rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    transition: all 0.18s ease;
+}
+
+#nuiInput .numberWrapper .inputControl {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    height: 100%;
+    padding: 0 0.65vw;
+    flex: 1;
+}
+
+#nuiInput .numStepBtns {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding-right: 0.25vw;
+    gap: 0.2vw;
+}
+
+#nuiInput .numBtn {
+    width: 1.45vw;
+    height: 2.8vh;
+    border-radius: 0.25vw;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0.0521vw solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75vw;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+#nuiInput #fivem .numBtn:hover {
+    background: rgba(31, 165, 222, 0.2);
+    border-color: #1FA5DE;
+    color: #FFFFFF;
+}
+
+#nuiInput #redm .numBtn:hover {
+    background: rgba(255, 195, 66, 0.2);
+    border-color: #FFC342;
+    color: #FFFFFF;
+}
+
+#nuiInput .numBtn:active {
+    transform: scale(0.92);
+}
+
+/* =========================================================
+   NOVO SELECT DROPDOWN & TIME PICKER CUSTOMIZADOS (Dark)
+   ========================================================= */
+#nuiInput .customDropdownWrap {
+    position: relative;
+    width: 100%;
+}
+
+#nuiInput .customSelectTrigger,
+#nuiInput .timeTrigger {
+    width: 100%;
+    height: 4.2vh;
+    padding: 0 0.75vw;
+    border-radius: 0.38vw;
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.0521vw solid rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+    font-size: 0.7vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+#nuiInput .triggerIcon {
+    width: 0.85vw;
+    height: 0.85vw;
+    color: rgba(255, 255, 255, 0.55);
+    transition: transform 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+}
+
+#nuiInput .customSelectTrigger.active .triggerIcon {
+    transform: rotate(180deg);
+    color: #1FA5DE;
+}
+
+#nuiInput .customDropdownMenu {
+    position: absolute;
+    top: calc(100% + 0.5vh);
+    left: 0;
+    width: 100%;
+    background: #11161C;
+    border: 0.0521vw solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.38vw;
+    box-shadow: 0 1vh 2.5vw rgba(0, 0, 0, 0.85);
+    z-index: 999;
+    display: none;
+    max-height: 18vh;
+    overflow-y: auto;
+    padding: 0.4vh 0.25vw;
+}
+
+#nuiInput #redm .customDropdownMenu {
+    background: #1A1410;
+    border-color: rgba(255, 195, 66, 0.25);
+}
+
+#nuiInput .customDropdownMenu::-webkit-scrollbar { width: 0.2vw; }
+#nuiInput .customDropdownMenu::-webkit-scrollbar-track { background: transparent; }
+#nuiInput .customDropdownMenu::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 0.2vw; }
+
+#nuiInput .dropdownOption {
+    padding: 0.8vh 0.65vw;
+    font-size: 0.68vw;
+    color: rgba(255, 255, 255, 0.78);
+    border-radius: 0.25vw;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#nuiInput .dropdownOption:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #FFFFFF;
+}
+
+#nuiInput #fivem .dropdownOption.selected {
+    background: linear-gradient(90deg, rgba(31, 165, 222, 0.22) 0%, rgba(44, 103, 191, 0.1) 100%);
+    color: #1FA5DE;
+    font-weight: 600;
+}
+
+#nuiInput #redm .dropdownOption.selected {
+    background: rgba(255, 195, 66, 0.2);
+    color: #FFC342;
+    font-weight: 600;
+}
+
+/* Menu de Horário (2 Colunas: Horas | Minutos) */
+#nuiInput .timePickerMenu {
+    position: absolute;
+    top: calc(100% + 0.5vh);
+    left: 0;
+    width: 100%;
+    min-width: 8.5vw;
+    background: #11161C;
+    border: 0.0521vw solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.38vw;
+    box-shadow: 0 1vh 2.5vw rgba(0, 0, 0, 0.9);
+    z-index: 999;
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25vw;
+    padding: 0.5vh 0.3vw;
+}
+
+#nuiInput .timeColumn {
+    max-height: 16vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2vh;
+    padding-right: 0.15vw;
+}
+
+#nuiInput .timeColumn::-webkit-scrollbar { width: 0.16vw; }
+#nuiInput .timeColumn::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 0.2vw; }
+
+#nuiInput .timeCell {
+    padding: 0.55vh 0;
+    text-align: center;
+    font-size: 0.66vw;
+    color: rgba(255, 255, 255, 0.7);
+    border-radius: 0.22vw;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+#nuiInput .timeCell:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+}
+
+#nuiInput #fivem .timeCell.selected {
+    background: linear-gradient(135deg, #1FA5DE 0%, #2C67BF 100%);
+    color: #FFFFFF;
+    font-weight: 600;
+    box-shadow: 0 0 0.4vw rgba(31, 165, 222, 0.4);
+}
+
+#nuiInput #redm .timeCell.selected {
+    background: linear-gradient(135deg, #FFC342 0%, #B55400 100%);
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
+/* Wrapper de Senha */
 #nuiInput .fieldWrapper {
     position: relative;
     width: 100%;
@@ -254,22 +486,6 @@
 
 #nuiInput .togglePasswordBtn:hover { color: #FFFFFF; }
 #nuiInput .togglePasswordBtn svg { width: 0.9vw; height: 0.9vw; }
-
-/* Select Dropdown */
-#nuiInput .selectControl {
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
-    background-repeat: no-repeat;
-    background-position: right 0.75vw center;
-    padding-right: 2vw;
-}
-
-#nuiInput .selectControl option {
-    background-color: #12161B;
-    color: #FFFFFF;
-}
 
 /* Contador de Caracteres */
 #nuiInput .charCounter {
@@ -411,46 +627,52 @@
     color: #FFFFFF;
     font-size: 0.62vw;
     text-align: center;
-    -moz-appearance: textfield;
 }
 
-#nuiInput .rgbNumberInput::-webkit-outer-spin-button,
-#nuiInput .rgbNumberInput::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* Checkbox, Radio e Switch */
+/* =========================================================
+   CHECKBOX, RADIO & SWITCH PERFEITAMENTE CENTRALIZADOS
+   ========================================================= */
 #nuiInput .optionsList {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8vh 1vw;
+    align-items: center;
+    min-height: 4.2vh;
+    gap: 0.8vh 1.1vw;
     padding: 0.4vh 0;
 }
 
 #nuiInput .optionLabel {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5vw;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.85);
     font-size: 0.68vw;
     font-weight: 400;
+    line-height: 1;
+}
+
+#nuiInput .optionLabel span:last-child {
+    display: inline-flex;
+    align-items: center;
+    padding-top: 0.05vh;
 }
 
 #nuiInput .hiddenInput { display: none; }
 
 #nuiInput .customCheck,
 #nuiInput .customRadio {
+    position: relative;
     width: 1.05vw;
     height: 1.05vw;
-    border-radius: 0.25vw;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.26vw;
     background: rgba(255, 255, 255, 0.04);
-    border: 0.0521vw solid rgba(255, 255, 255, 0.2);
-    display: flex;
+    border: 0.0521vw solid rgba(255, 255, 255, 0.22);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
 }
 
@@ -460,30 +682,36 @@
 #nuiInput #fivem .hiddenInput:checked + .customRadio {
     background: linear-gradient(135deg, #1FA5DE 0%, #2C67BF 100%);
     border-color: #1FA5DE;
-    box-shadow: 0 0 0.4vw rgba(31, 165, 222, 0.4);
+    box-shadow: 0 0 0.45vw rgba(31, 165, 222, 0.45);
 }
 
 #nuiInput #redm .hiddenInput:checked + .customCheck,
 #nuiInput #redm .hiddenInput:checked + .customRadio {
     background: linear-gradient(135deg, #FFC342 0%, #B55400 100%);
     border-color: #FFC342;
-    box-shadow: 0 0 0.4vw rgba(255, 195, 66, 0.4);
+    box-shadow: 0 0 0.45vw rgba(255, 195, 66, 0.45);
 }
 
-#nuiInput .customCheck::after {
-    content: '';
-    width: 0.3vw;
-    height: 0.55vw;
-    border: solid white;
-    border-width: 0 0.12vw 0.12vw 0;
-    transform: rotate(45deg) scale(0);
-    transition: transform 0.15s ease;
+/* SVG centralizado milimetricamente dentro do Checkbox */
+#nuiInput .customCheck svg {
+    width: 0.70vw;       /* Tamanho do ícone (aumente ou diminua se quiser) */
+    height: 0.70vw;
+    stroke: #FFFFFF;
+    stroke-width: 3.2;   /* Grossura da linha do check */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    display: block;
+    
+    /* Posição quando desmarcado (escondido) */
+    transform: scale(0) translate(0px, 0px);
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-#nuiInput .hiddenInput:checked + .customCheck::after {
-    transform: rotate(45deg) scale(1);
+#nuiInput .hiddenInput:checked + .customCheck svg {
+    /* MEXA AQUI: translate(EIXO_X, EIXO_Y) */
+    transform: scale(1) translate(0px, 0.5px); 
 }
-
 #nuiInput .customRadio::after {
     content: '';
     width: 0.42vw;
@@ -491,14 +719,14 @@
     border-radius: 50%;
     background: #FFFFFF;
     transform: scale(0);
-    transition: transform 0.15s ease;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #nuiInput .hiddenInput:checked + .customRadio::after {
     transform: scale(1);
 }
 
-/* Switch Toggle */
+/* Switch Toggle Redondo e Proporcional */
 #nuiInput .switchRow {
     display: flex;
     align-items: center;
@@ -514,21 +742,24 @@
 #nuiInput .switchTrack {
     position: relative;
     width: 2.1vw;
-    height: 2.1vh;
-    background: rgba(255, 255, 255, 0.15);
+    height: 1.15vw;
+    background: rgba(255, 255, 255, 0.14);
     border-radius: 2vw;
+    display: flex;
+    align-items: center;
+    padding: 0.15vw;
     transition: background 0.2s ease;
+    flex-shrink: 0;
 }
 
 #nuiInput .switchThumb {
-    position: absolute;
-    top: 0.25vh;
-    left: 0.15vw;
     width: 0.85vw;
-    height: 1.6vh;
+    height: 0.85vw;
+    aspect-ratio: 1 / 1;
     background: #FFFFFF;
     border-radius: 50%;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0.1vh 0.2vw rgba(0, 0, 0, 0.4);
 }
 
 #nuiInput #fivem .hiddenInput:checked + .switchTrack { background: #1FA5DE; }

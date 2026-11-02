@@ -14,6 +14,14 @@ $(function () {
         }
     });
 
+    // Fecha dropdowns abertos ao clicar fora
+    $(document).on("click", function (e) {
+        if (!$(e.target).closest(".customDropdownWrap").length) {
+            $(".customDropdownMenu, .timePickerMenu").fadeOut(120);
+            $(".customSelectTrigger, .timeTrigger").removeClass("active");
+        }
+    });
+
     $(document).on("keydown", function (e) {
         if (!activeConfig) return;
         if (e.key === "Escape") {
@@ -27,7 +35,7 @@ $(function () {
 
 function renderInputModal(_) {
     const gameName = _.gameName || "fivem";
-    const modalWidth = _.width || "md"; // sm, md, lg, xl
+    const modalWidth = _.width || "md";
     const confirmText = (_.messages && _.messages.confirm) ? _.messages.confirm : "Confirmar";
     const cancelText = (_.messages && _.messages.cancel) ? _.messages.cancel : "Cancelar";
 
@@ -35,7 +43,7 @@ function renderInputModal(_) {
 
     (_.inputs || []).forEach((field, index) => {
         const fieldId = field.id || `input_field_${index}`;
-        const sizeClass = `size-${field.size || "100"}`; // 25, 33, 50, 75, 100
+        const sizeClass = `size-${field.size || "100"}`;
         const reqStar = field.required ? `<span class="requiredStar">*</span>` : "";
         const descHtml = field.description ? `<div class="inputDescription">${field.description}</div>` : "";
         const labelHtml = field.label ? `<label class="inputLabel" for="${fieldId}"><span>${field.label}${reqStar}</span></label>` : "";
@@ -44,9 +52,7 @@ function renderInputModal(_) {
 
         switch (field.type) {
             case "text":
-            case "number":
             case "date":
-            case "time":
                 controlHtml = `
                     ${labelHtml}
                     ${descHtml}
@@ -56,9 +62,65 @@ function renderInputModal(_) {
                         class="inputControl" 
                         placeholder="${field.placeholder || ""}" 
                         value="${field.default !== undefined ? field.default : ""}"
-                        ${field.min !== undefined ? `min="${field.min}"` : ""} ${field.max !== undefined ? `max="${field.max}"` : ""}
-                        ${field.step !== undefined ? `step="${field.step}"` : ""} ${field.maxLength ? `maxlength="${field.maxLength}"` : ""}
+                        ${field.maxLength ? `maxlength="${field.maxLength}"` : ""}
                     />
+                `;
+                break;
+
+            case "number":
+                controlHtml = `
+                    ${labelHtml}
+                    ${descHtml}
+                    <div class="numberWrapper">
+                        <input 
+                            type="number" 
+                            id="${fieldId}" 
+                            class="inputControl" 
+                            placeholder="${field.placeholder || "0"}" 
+                            value="${field.default !== undefined ? field.default : ""}"
+                            ${field.min !== undefined ? `min="${field.min}"` : ""}
+                            ${field.max !== undefined ? `max="${field.max}"` : ""}
+                            ${field.step !== undefined ? `step="${field.step}"` : "step='1'"}
+                        />
+                        <div class="numStepBtns">
+                            <button type="button" class="numBtn" data-target="${fieldId}" data-dir="-1">−</button>
+                            <button type="button" class="numBtn" data-target="${fieldId}" data-dir="1">+</button>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case "time":
+                const defaultTime = field.default || "12:00";
+                const [defH, defM] = defaultTime.split(":");
+                let hoursHtml = "";
+                let minsHtml = "";
+
+                for (let h = 0; h < 24; h++) {
+                    const hStr = String(h).padStart(2, "0");
+                    const sel = hStr === defH ? "selected" : "";
+                    hoursHtml += `<div class="timeCell hourCell ${sel}" data-val="${hStr}">${hStr}h</div>`;
+                }
+                for (let m = 0; m < 60; m += 5) { // Incrementos de 5 min (ou m++ para todos os minutos)
+                    const mStr = String(m).padStart(2, "0");
+                    const sel = mStr === defM ? "selected" : "";
+                    minsHtml += `<div class="timeCell minCell ${sel}" data-val="${mStr}">${mStr}m</div>`;
+                }
+
+                controlHtml = `
+                    ${labelHtml}
+                    ${descHtml}
+                    <div class="customDropdownWrap" data-time-id="${fieldId}">
+                        <input type="hidden" id="${fieldId}" value="${defaultTime}" />
+                        <div class="timeTrigger">
+                            <span id="label_${fieldId}">${defaultTime}</span>
+                            <svg class="triggerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                        <div class="timePickerMenu">
+                            <div class="timeColumn" data-col="h">${hoursHtml}</div>
+                            <div class="timeColumn" data-col="m">${minsHtml}</div>
+                        </div>
+                    </div>
                 `;
                 break;
 
@@ -100,17 +162,28 @@ function renderInputModal(_) {
                 break;
 
             case "select":
-                let optionsHtml = "";
-                (field.options || []).forEach(opt => {
-                    const isSelected = (field.default !== undefined && String(field.default) === String(opt.value)) ? "selected" : "";
-                    optionsHtml += `<option value="${opt.value}" ${isSelected}>${opt.label}</option>`;
+                const opts = field.options || [];
+                let selectedOpt = opts.find(o => String(o.value) === String(field.default)) || opts[0] || { label: "Selecione...", value: "" };
+                let optionsListHtml = "";
+
+                opts.forEach(opt => {
+                    const isSel = String(opt.value) === String(selectedOpt.value) ? "selected" : "";
+                    optionsListHtml += `<div class="dropdownOption ${isSel}" data-value="${opt.value}">${opt.label}</div>`;
                 });
+
                 controlHtml = `
                     ${labelHtml}
                     ${descHtml}
-                    <select id="${fieldId}" class="selectControl">
-                        ${optionsHtml}
-                    </select>
+                    <div class="customDropdownWrap" data-select-id="${fieldId}">
+                        <input type="hidden" id="${fieldId}" value="${selectedOpt.value}" />
+                        <div class="customSelectTrigger">
+                            <span id="label_${fieldId}">${selectedOpt.label}</span>
+                            <svg class="triggerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="customDropdownMenu">
+                            ${optionsListHtml}
+                        </div>
+                    </div>
                 `;
                 break;
 
@@ -171,12 +244,14 @@ function renderInputModal(_) {
 
             case "checkbox":
                 let checksHtml = "";
-                (field.options || []).forEach((opt, idx) => {
+                (field.options || []).forEach((opt) => {
                     const checked = (Array.isArray(field.default) && field.default.includes(opt.value)) || opt.checked ? "checked" : "";
                     checksHtml += `
                         <label class="optionLabel">
                             <input type="checkbox" class="hiddenInput" name="${fieldId}" value="${opt.value}" ${checked} />
-                            <span class="customCheck"></span>
+                            <span class="customCheck">
+                                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
                             <span>${opt.label}</span>
                         </label>
                     `;
@@ -252,6 +327,87 @@ function renderInputModal(_) {
 }
 
 function bindInputEvents() {
+    // Botões - e + do Input Number
+    $(".numBtn").on("click", function () {
+        const targetId = $(this).data("target");
+        const dir = Number($(this).data("dir"));
+        const input = $(`#${targetId}`);
+
+        const step = Number(input.attr("step")) || 1;
+        const min = input.attr("min") !== undefined ? Number(input.attr("min")) : -Infinity;
+        const max = input.attr("max") !== undefined ? Number(input.attr("max")) : Infinity;
+        let current = Number(input.val()) || 0;
+
+        let next = current + (dir * step);
+        next = Math.max(min, Math.min(max, next));
+        input.val(next).trigger("input");
+    });
+
+    // Abrir/Fechar Select Customizado
+    $(".customSelectTrigger").on("click", function () {
+        const wrap = $(this).closest(".customDropdownWrap");
+        const menu = wrap.find(".customDropdownMenu");
+        const isOpen = menu.is(":visible");
+
+        $(".customDropdownMenu, .timePickerMenu").fadeOut(120);
+        $(".customSelectTrigger, .timeTrigger").removeClass("active");
+
+        if (!isOpen) {
+            $(this).addClass("active");
+            menu.fadeIn(140);
+        }
+    });
+
+    // Selecionar Opção do Select Customizado
+    $(".dropdownOption").on("click", function () {
+        const wrap = $(this).closest(".customDropdownWrap");
+        const fieldId = wrap.data("select-id");
+        const val = $(this).data("value");
+        const label = $(this).text();
+
+        wrap.find(".dropdownOption").removeClass("selected");
+        $(this).addClass("selected");
+
+        $(`#${fieldId}`).val(val);
+        $(`#label_${fieldId}`).text(label);
+        wrap.closest(".inputGroup").removeClass("has-error");
+
+        wrap.find(".customDropdownMenu").fadeOut(120);
+        wrap.find(".customSelectTrigger").removeClass("active");
+    });
+
+    // Abrir/Fechar Time Picker Customizado
+    $(".timeTrigger").on("click", function () {
+        const wrap = $(this).closest(".customDropdownWrap");
+        const menu = wrap.find(".timePickerMenu");
+        const isOpen = menu.is(":visible");
+
+        $(".customDropdownMenu, .timePickerMenu").fadeOut(120);
+        $(".customSelectTrigger, .timeTrigger").removeClass("active");
+
+        if (!isOpen) {
+            $(this).addClass("active");
+            menu.css("display", "grid").hide().fadeIn(140);
+        }
+    });
+
+    // Selecionar Hora ou Minuto no Time Picker Customizado
+    $(".timeCell").on("click", function () {
+        const col = $(this).closest(".timeColumn");
+        const wrap = $(this).closest(".customDropdownWrap");
+        const fieldId = wrap.data("time-id");
+
+        col.find(".timeCell").removeClass("selected");
+        $(this).addClass("selected");
+
+        const h = wrap.find(".hourCell.selected").data("val") || "12";
+        const m = wrap.find(".minCell.selected").data("val") || "00";
+        const formatted = `${h}:${m}`;
+
+        $(`#${fieldId}`).val(formatted);
+        $(`#label_${fieldId}`).text(formatted);
+    });
+
     // Mostrar / Ocultar Senha
     $(".togglePasswordBtn").on("click", function () {
         const targetId = $(this).data("target");
@@ -313,7 +469,7 @@ function bindInputEvents() {
     });
 
     // Remover erro ao digitar
-    $(".inputControl, .textareaControl, .selectControl").on("input change", function () {
+    $(".inputControl, .textareaControl").on("input change", function () {
         $(this).closest(".inputGroup").removeClass("has-error");
     });
 
@@ -405,19 +561,23 @@ function submitInputModal() {
 
     if (hasError) return;
 
-    const resourceName = activeConfig.resourceName || (window.GetParentResourceName ? GetParentResourceName() : "striata_input");
-    const callbackEndpoint = activeConfig.callback || "inputResult";
+    console.log("Valores capturados pelos inputs:", results);
 
-    $.post(`https://${resourceName}/${callbackEndpoint}`, JSON.stringify({
-        action: "confirm",
-        values: results
-    }));
+    if (window.invokeNative) {
+        const resourceName = activeConfig.resourceName || (window.GetParentResourceName ? GetParentResourceName() : "striata_input");
+        const callbackEndpoint = activeConfig.callback || "inputResult";
+
+        $.post(`https://${resourceName}/${callbackEndpoint}`, JSON.stringify({
+            action: "confirm",
+            values: results
+        }));
+    }
 
     closeInputModal(false);
 }
 
 function closeInputModal(sendCancelCallback) {
-    if (sendCancelCallback && activeConfig) {
+    if (sendCancelCallback && activeConfig && window.invokeNative) {
         const resourceName = activeConfig.resourceName || (window.GetParentResourceName ? GetParentResourceName() : "striata_input");
         const callbackEndpoint = activeConfig.callback || "inputResult";
 
@@ -432,7 +592,6 @@ function closeInputModal(sendCancelCallback) {
     $("#nuiInput").css("display", "none");
 }
 
-/* Funções Utilitárias de Conversão RGB / HEX */
 function clampRgb(val) {
     let n = parseInt(val, 10);
     if (isNaN(n)) return 0;
@@ -466,10 +625,7 @@ function rgbToHex(r, g, b) {
 // MODO DE TESTE PARA NAVEGADOR (LIVE SERVER)
 // ============================================================================
 $(function () {
-    // Se 'GetParentResourceName' não existir, significa que estamos no navegador e não no FiveM
     if (!window.invokeNative) {
-        
-        // Fundo falso de jogo só para enxergar o efeito de blur (vidro) no navegador
         $("body").css({
             "background-image": "url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=1920&auto=format&fit=crop')",
             "background-size": "cover",
@@ -478,12 +634,11 @@ $(function () {
             "overflow": "hidden"
         });
 
-        // Simula o SendNUIMessage do Lua
         window.postMessage({
             nuiType: "input",
             inputAction: "open",
-            gameName: "fivem", // Troque para "redm" se quiser testar o tema RedM
-            width: "lg",       // Teste "sm", "md", "lg", "xl"
+            gameName: "fivem",
+            width: "lg",
             title: "Painel de Configuração",
             subtitle: "Visualização em tempo real pelo Live Server",
             messages: {
