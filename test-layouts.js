@@ -121,6 +121,6 @@ $(function () {
         });
 
         // Carrega o layout 3 por padrão ao abrir o Live Server para você já conferir como fica
-        loadTestLayout(3);
+        loadTestLayout(1);
     }
 });
