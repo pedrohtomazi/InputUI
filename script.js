@@ -307,6 +307,7 @@ function renderInputModal(_) {
     const confirmText = (_.messages && _.messages.confirm) ? _.messages.confirm : "Confirmar";
     const cancelText = (_.messages && _.messages.cancel) ? _.messages.cancel : "Cancelar";
 
+    // MODO 1: MÚLTIPLOS PAINÉIS EM CANTOS DIFERENTES (_.panels)
     if (Array.isArray(_.panels) && _.panels.length > 0) {
         let panelsHtml = "";
 
@@ -341,7 +342,9 @@ function renderInputModal(_) {
                 </div>
             </div>
         `);
-    } else {
+    } 
+    // MODO 2: PAINEL ÚNICO (Padrão)
+    else {
         const modalWidth = _.width || "md";
         const modalPos = _.position || "center";
         const fieldsHtml = buildFieldsHtml(_.inputs, "single");
@@ -371,7 +374,9 @@ function renderInputModal(_) {
     bindInputEvents();
 }
 
+// ESTA FUNÇÃO ESTAVA FALTANDO NO SEU CÓDIGO COLADO:
 function bindInputEvents() {
+    // Botões - e + do Input Number
     $(".numBtn").on("click", function () {
         const targetId = $(this).data("target");
         const dir = Number($(this).data("dir"));
@@ -387,6 +392,7 @@ function bindInputEvents() {
         input.val(next).trigger("input");
     });
 
+    // Abrir/Fechar Select Customizado
     $(".customSelectTrigger").on("click", function () {
         const wrap = $(this).closest(".customDropdownWrap");
         const menu = wrap.find(".customDropdownMenu");
@@ -401,6 +407,7 @@ function bindInputEvents() {
         }
     });
 
+    // Selecionar Opção do Select Customizado
     $(".dropdownOption").on("click", function () {
         const wrap = $(this).closest(".customDropdownWrap");
         const fieldId = wrap.data("select-id");
@@ -418,6 +425,7 @@ function bindInputEvents() {
         wrap.find(".customSelectTrigger").removeClass("active");
     });
 
+    // Abrir/Fechar Time Picker Customizado
     $(".timeTrigger").on("click", function () {
         const wrap = $(this).closest(".customDropdownWrap");
         const menu = wrap.find(".timePickerMenu");
@@ -432,6 +440,7 @@ function bindInputEvents() {
         }
     });
 
+    // Selecionar Hora ou Minuto no Time Picker Customizado
     $(".timeCell").on("click", function () {
         const col = $(this).closest(".timeColumn");
         const wrap = $(this).closest(".customDropdownWrap");
@@ -448,6 +457,7 @@ function bindInputEvents() {
         $(`#label_${fieldId}`).text(formatted);
     });
 
+    // Mostrar / Ocultar Senha
     $(".togglePasswordBtn").on("click", function () {
         const targetId = $(this).data("target");
         const input = $(`#${targetId}`);
@@ -455,17 +465,20 @@ function bindInputEvents() {
         input.attr("type", isPass ? "text" : "password");
     });
 
+    // Contador de caracteres do Textarea
     $(".textareaControl").on("input", function () {
         const id = $(this).attr("id");
         $(`#count_${id}`).text($(this).val().length);
     });
 
+    // Atualização do Range Slider
     $(".rangeControl").on("input", function () {
         const id = $(this).attr("id");
         const unit = $(this).data("unit") || "";
         $(`#val_${id}`).text(`${$(this).val()}${unit}`);
     });
 
+    // Sincronização Color Picker -> HEX & RGB
     $(".colorPickerNative").on("input", function () {
         const id = $(this).attr("id");
         const hex = $(this).val().toUpperCase();
@@ -477,6 +490,7 @@ function bindInputEvents() {
         $(`#b_${id}`).val(rgb.b);
     });
 
+    // Sincronização HEX -> Color Picker & RGB
     $(".colorHexInput").on("input", function () {
         const id = $(this).attr("id").replace("hex_", "");
         let val = $(this).val();
@@ -491,6 +505,7 @@ function bindInputEvents() {
         }
     });
 
+    // Sincronização Inputs R, G, B -> Color Picker & HEX
     $(".rgbNumberInput").on("input", function () {
         const parentId = $(this).data("parent");
         let r = clampRgb($(`#r_${parentId}`).val());
@@ -502,10 +517,12 @@ function bindInputEvents() {
         $(`#hex_${parentId}`).val(hex);
     });
 
+    // Remover erro ao digitar
     $(".inputControl, .textareaControl").on("input change", function () {
         $(this).closest(".inputGroup").removeClass("has-error");
     });
 
+    // Botões de Ação
     $("#btnInputCancel").on("click", function () {
         closeInputModal(true);
     });
@@ -521,6 +538,7 @@ function submitInputModal() {
     let hasError = false;
     let results = {};
 
+    // Junta os inputs tanto do modo único quanto do modo multi-painel
     let allInputs = [];
     if (Array.isArray(activeConfig.panels) && activeConfig.panels.length > 0) {
         activeConfig.panels.forEach((p, pIdx) => {
@@ -594,7 +612,6 @@ function submitInputModal() {
                     hasError = true;
                     groupEl.addClass("has-error");
                 }
-                value = selectedChecks;
                 break;
 
             case "switch":
@@ -668,7 +685,7 @@ function rgbToHex(r, g, b) {
 }
 
 // ============================================================================
-// MODO DE TESTE NO NAVEGADOR (ABRINDO 3 PAINÉIS: ESQUERDA, CENTRO E DIREITA)
+// MODO DE TESTE PARA NAVEGADOR (LIVE SERVER)
 // ============================================================================
 $(function () {
     if (!window.invokeNative) {
@@ -680,38 +697,55 @@ $(function () {
             "overflow": "hidden"
         });
 
+        // Exemplo abrindo 2 painéis (um na esquerda e outro na direita)
         window.postMessage({
             nuiType: "input",
             inputAction: "open",
             gameName: "fivem",
-            backdrop: false,
+            backdrop: false, // false deixa o meio da tela sem blur
             messages: {
                 confirm: "Confirmar Tudo",
                 cancel: "Cancelar"
             },
             panels: [
+                // PAINEL DA ESQUERDA
                 {
                     position: "left",
-                    width: "sm",
-                    title: "Esquerda",
+                    width: "md",
+                    title: "Dados da Organização",
+                    subtitle: "Identificação e acesso",
                     inputs: [
-                        { id: "dado_esq", type: "text", label: "Campo Esquerdo", placeholder: "Esquerda...", size: "100" }
+                        { id: "nome", type: "text", label: "Nome da Organização", placeholder: "Ex: Mecânica Sul", size: "50", required: true },
+                        { id: "senha", type: "password", label: "PIN do Cofre", default: "1234", size: "50", required: true },
+                        { id: "vagas", type: "number", label: "Limite", default: 25, min: 1, max: 100, size: "50", required: true },
+                        { id: "horario", type: "time", label: "Horário de Pico", default: "20:00", size: "50" },
+                        { id: "categoria", type: "select", label: "Tipo de Setor", size: "100", default: "ilegal", options: [
+                            { label: "Legal / Empresa", value: "legal" },
+                            { label: "Organização Ilegal", value: "ilegal" },
+                            { label: "Governamental / Polícia", value: "gov" }
+                        ]},
+                        { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" }
                     ]
                 },
-                {
-                    position: "center",
-                    width: "sm",
-                    title: "Centro",
-                    inputs: [
-                        { id: "dado_centro", type: "text", label: "Campo Central", placeholder: "Centro...", size: "100" }
-                    ]
-                },
+                // PAINEL DA DIREITA
                 {
                     position: "right",
-                    width: "sm",
-                    title: "Direita",
+                    width: "md",
+                    title: "Estética & Permissões",
+                    subtitle: "Customização visual e taxas",
                     inputs: [
-                        { id: "dado_dir", type: "text", label: "Campo Direito", placeholder: "Direita...", size: "100" }
+                        { id: "cor_neon", type: "rgb", label: "Cor do Blip e Uniforme (RGB)", default: "#1FA5DE", size: "100" },
+                        { id: "imposto", type: "range", label: "Taxa da Lavagem", min: 0, max: 100, default: 30, unit: "%", size: "100" },
+                        { id: "permissoes", type: "checkbox", label: "Permissões do Cargo", size: "100", default: ["bau", "garagem"], options: [
+                            { label: "Acessar Baú", value: "bau" },
+                            { label: "Retirar Veículos", value: "garagem" },
+                            { label: "Recrutar", value: "recrutar" }
+                        ]},
+                        { id: "pagamento", type: "radio", label: "Método de Cobrança", size: "100", default: "banco", options: [
+                            { label: "Dinheiro Sujo", value: "sujo" },
+                            { label: "Transferência Bancária", value: "banco" }
+                        ]},
+                        { id: "ativo", type: "switch", label: "Status do Painel", placeholder: "Habilitar funcionamento imediato", default: true, size: "100" }
                     ]
                 }
             ]
