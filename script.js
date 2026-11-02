@@ -724,7 +724,8 @@ $(function () {
                             { label: "Organização Ilegal", value: "ilegal" },
                             { label: "Governamental / Polícia", value: "gov" }
                         ]},
-                        { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" }
+                        { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" },
+                        { id: "date", type: "date", label: "", placeholder: "", maxLength: 250, size: "100" }
                     ]
                 },
                 // PAINEL DA DIREITA
