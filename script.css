@@ -10,13 +10,13 @@
 }
 
 /* =========================================================
-   MODO MULTI-PAINEL (Inputs em lados opostos da tela)
+   MODO MULTI-PAINEL (Esquerda, Centro e Direita Simultâneos)
    ========================================================= */
 #nuiInput .multiPanelContainer {
     position: relative;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* Deixa o meio da tela livre */
+    pointer-events: none; /* Deixa o fundo livre para interagir com o jogo */
 }
 
 #nuiInput .panelSlot {
@@ -27,35 +27,29 @@
     gap: 1.5vh;
 }
 
-/* Posições individuais de cada painel na tela */
+/* Posições dos 3 modais na tela */
 #nuiInput .slot-left,
 #nuiInput .slot-center-left {
-    left: 2.5vw;
+    left: 2vw;
     top: 50%;
     transform: translateY(-50%);
 }
 
-#nuiInput .slot-right,
-#nuiInput .slot-center-right {
-    right: 2.5vw;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-#nuiInput .slot-top-left { left: 2.5vw; top: 3.5vh; }
-#nuiInput .slot-top-center { left: 50%; top: 3.5vh; transform: translateX(-50%); }
-#nuiInput .slot-top-right { right: 2.5vw; top: 3.5vh; }
-
-#nuiInput .slot-bottom-left { left: 2.5vw; bottom: 10vh; }
-#nuiInput .slot-bottom-right { right: 2.5vw; bottom: 10vh; }
-
-#nuiInput .slot-center {
+#nuiInput .slot-center,
+#nuiInput .slot-middle {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
 }
 
-/* Barra de Ação Flutuante (Confirmar / Cancelar geral para múltiplos painéis) */
+#nuiInput .slot-right,
+#nuiInput .slot-center-right {
+    right: 2vw;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Barra de Ação Flutuante Inferior para Confirmar os 3 painéis juntos */
 #nuiInput .multiFloatingFooter {
     position: absolute;
     bottom: 3.5vh;
@@ -70,6 +64,7 @@
     background: linear-gradient(180deg, rgba(16, 22, 28, 0.96) 0%, rgba(10, 12, 16, 0.98) 100%);
     border: 0.0521vw solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 1vh 2.5vw rgba(0, 0, 0, 0.8);
+    z-index: 1000;
 }
 
 #nuiInput {
