@@ -35,7 +35,9 @@ $(function () {
 
 function renderInputModal(_) {
     const gameName = _.gameName || "fivem";
-    const modalWidth = _.width || "md";
+    const modalWidth = _.width || "md"; 
+    const modalPos = _.position || "center"; // "center", "left", "right", "top-right", etc.
+    const showBackdrop = _.backdrop !== false ? "" : "no-backdrop"; // Se for false, tira o blur do fundo
     const confirmText = (_.messages && _.messages.confirm) ? _.messages.confirm : "Confirmar";
     const cancelText = (_.messages && _.messages.cancel) ? _.messages.cancel : "Cancelar";
 
@@ -303,7 +305,7 @@ function renderInputModal(_) {
     });
 
     $("#nuiInput").html(`
-        <div id="${gameName}">
+        <div id="${gameName}" class="pos-${modalPos} ${showBackdrop}">
             <div class="inputModal modal-${modalWidth}">
                 <div class="modalHeader">
                     <div class="modalTitle">${_.title || "Formulário de Entrada"}</div>

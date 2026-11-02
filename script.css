@@ -26,11 +26,68 @@
     width: 100%;
     height: 100%;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    padding: 3.5vh 2.5vw; /* Espaçamento das bordas da tela quando ficar nos cantos */
     background: radial-gradient(circle at center, rgba(12, 20, 26, 0.45) 0%, rgba(0, 0, 0, 0.75) 100%);
     backdrop-filter: blur(0.35vw);
     animation: fadeInBg 0.2s ease-out forwards;
+}
+
+/* Opção para remover o fundo escuro/blur quando usar o modal nos cantos */
+#nuiInput .no-backdrop {
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+
+/* =========================================================
+   SISTEMA DE POSICIONAMENTO NA TELA
+   ========================================================= */
+/* Centro (Padrão) */
+#nuiInput .pos-center {
+    justify-content: center;
+    align-items: center;
+}
+
+/* Esquerda e Direita (Centralizados verticalmente) */
+#nuiInput .pos-left,
+#nuiInput .pos-center-left {
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#nuiInput .pos-right,
+#nuiInput .pos-center-right {
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Topo */
+#nuiInput .pos-top-left {
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+#nuiInput .pos-top-center,
+#nuiInput .pos-top {
+    justify-content: center;
+    align-items: flex-start;
+}
+#nuiInput .pos-top-right {
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+/* Base / Inferior */
+#nuiInput .pos-bottom-left {
+    justify-content: flex-start;
+    align-items: flex-end;
+}
+#nuiInput .pos-bottom-center,
+#nuiInput .pos-bottom {
+    justify-content: center;
+    align-items: flex-end;
+}
+#nuiInput .pos-bottom-right {
+    justify-content: flex-end;
+    align-items: flex-end;
 }
 
 @keyframes fadeInBg {
