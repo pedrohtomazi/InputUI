@@ -17,8 +17,8 @@ $(function () {
     // Fecha dropdowns abertos ao clicar fora
     $(document).on("click", function (e) {
         if (!$(e.target).closest(".customDropdownWrap").length) {
-            $(".customDropdownMenu, .timePickerMenu").fadeOut(120);
-            $(".customSelectTrigger, .timeTrigger").removeClass("active");
+            $(".customDropdownMenu, .timePickerMenu, .datePickerMenu").fadeOut(120);
+            $(".customSelectTrigger, .timeTrigger, .dateTrigger").removeClass("active");
         }
     });
 
@@ -42,13 +42,13 @@ function buildFieldsHtml(inputsList, prefix) {
         const sizeClass = `size-${field.size || "100"}`;
         const reqStar = field.required ? `<span class="requiredStar">*</span>` : "";
         const descHtml = field.description ? `<div class="inputDescription">${field.description}</div>` : "";
-        const labelHtml = field.label ? `<label class="inputLabel" for="${fieldId}"><span>${field.label}${reqStar}</span></label>` : "";
+        const labelTarget = field.type === "date" || field.type === "time" ? `${fieldId}_text` : fieldId;
+        const labelHtml = field.label ? `<label class="inputLabel" for="${labelTarget}"><span>${field.label}${reqStar}</span></label>` : "";
 
         let controlHtml = "";
 
         switch (field.type) {
             case "text":
-            case "date":
                 controlHtml = `
                     ${labelHtml}
                     ${descHtml}
@@ -62,6 +62,39 @@ function buildFieldsHtml(inputsList, prefix) {
                     />
                 `;
                 break;
+
+            case "date": {
+                const dateValue = field.default || "";
+                const today = new Date();
+                const [year, month, day] = /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+                    ? dateValue.split("-").map(Number)
+                    : [today.getFullYear(), today.getMonth() + 1, today.getDate()];
+                const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                const dayCells = buildDateColumn("day", "Dia", Array.from({ length: 31 }, (_, i) => i + 1), day);
+                const monthCells = buildDateColumn("month", "Mês", monthNames.map((label, i) => ({ value: i + 1, label })), month);
+                const yearCells = buildDateColumn("year", "Ano", Array.from({ length: 201 }, (_, i) => i + 1900), year);
+                const dateLabel = dateValue
+                    ? `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`
+                    : (field.placeholder || "Selecionar data");
+
+                controlHtml = `
+                    ${labelHtml}
+                    ${descHtml}
+                    <div class="customDropdownWrap" data-date-id="${fieldId}">
+                        <input type="hidden" id="${fieldId}" value="${dateValue}" />
+                        <div class="dateTrigger">
+                            <input type="text" id="${fieldId}_text" class="dateTextInput" value="${dateValue ? dateLabel : ""}" placeholder="${field.placeholder || "DD/MM/AAAA"}" maxlength="10" autocomplete="off" />
+                            <button type="button" class="pickerToggle datePickerToggle" aria-label="Abrir seletor de data">
+                                <svg class="triggerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 11h18"></path></svg>
+                            </button>
+                        </div>
+                        <div class="datePickerMenu">
+                            ${dayCells}${monthCells}${yearCells}
+                        </div>
+                    </div>
+                `;
+                break;
+            }
 
             case "number":
                 controlHtml = `
@@ -97,7 +130,7 @@ function buildFieldsHtml(inputsList, prefix) {
                     const sel = hStr === defH ? "selected" : "";
                     hoursHtml += `<div class="timeCell hourCell ${sel}" data-val="${hStr}">${hStr}h</div>`;
                 }
-                for (let m = 0; m < 60; m += 5) {
+                for (let m = 0; m < 60; m++) {
                     const mStr = String(m).padStart(2, "0");
                     const sel = mStr === defM ? "selected" : "";
                     minsHtml += `<div class="timeCell minCell ${sel}" data-val="${mStr}">${mStr}m</div>`;
@@ -109,8 +142,10 @@ function buildFieldsHtml(inputsList, prefix) {
                     <div class="customDropdownWrap" data-time-id="${fieldId}">
                         <input type="hidden" id="${fieldId}" value="${defaultTime}" />
                         <div class="timeTrigger">
-                            <span id="label_${fieldId}">${defaultTime}</span>
-                            <svg class="triggerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <input type="text" id="${fieldId}_text" class="timeTextInput" value="${defaultTime}" placeholder="HH:MM" maxlength="5" autocomplete="off" />
+                            <button type="button" class="pickerToggle timePickerToggle" aria-label="Abrir seletor de horário">
+                                <svg class="triggerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            </button>
                         </div>
                         <div class="timePickerMenu">
                             <div class="timeColumn" data-col="h">${hoursHtml}</div>
@@ -203,7 +238,8 @@ function buildFieldsHtml(inputsList, prefix) {
                             value="${curVal}"
                             data-unit="${unit}"
                         />
-                        <span class="rangeValueBadge" id="val_${fieldId}">${curVal}${unit}</span>
+                        <input type="number" id="${fieldId}_value" class="rangeValueInput" min="${minVal}" max="${maxVal}" step="${stepVal}" value="${curVal}" aria-label="${field.label || "Valor"}" />
+                        ${unit ? `<span class="rangeUnit">${unit}</span>` : ""}
                     </div>
                 `;
                 break;
@@ -299,6 +335,44 @@ function buildFieldsHtml(inputsList, prefix) {
     });
 
     return fieldsHtml;
+}
+
+function buildDateColumn(part, title, values, selectedValue) {
+    const cells = values.map((entry) => {
+        const item = typeof entry === "object" ? entry : { value: entry, label: entry };
+        const selected = String(item.value) === String(selectedValue) ? "selected" : "";
+        return `<div class="dateCell ${selected}" data-value="${item.value}">${item.label}</div>`;
+    }).join("");
+
+    return `
+        <div class="datePickerColumn">
+            <div class="datePickerColumnTitle">${title}</div>
+            <div class="dateColumn" data-part="${part}">${cells}</div>
+        </div>
+    `;
+}
+
+function parseDateInput(value) {
+    const trimmed = String(value || "").trim();
+    const match = trimmed.match(/^(?:(\d{2})\/(\d{2})\/(\d{4})|(\d{4})-(\d{2})-(\d{2}))$/);
+    if (!match) return null;
+
+    const day = Number(match[1] || match[6]);
+    const month = Number(match[2] || match[5]);
+    const year = Number(match[3] || match[4]);
+    const parsed = new Date(year, month - 1, day);
+
+    if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return null;
+    return { year, month, day, iso: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` };
+}
+
+function updateDatePickerCells(wrap, parts) {
+    wrap.find(".dateColumn").each(function () {
+        const part = $(this).data("part");
+        $(this).find(".dateCell").each(function () {
+            $(this).toggleClass("selected", Number($(this).data("value")) === parts[part]);
+        });
+    });
 }
 
 function renderInputModal(_) {
@@ -398,8 +472,8 @@ function bindInputEvents() {
         const menu = wrap.find(".customDropdownMenu");
         const isOpen = menu.is(":visible");
 
-        $(".customDropdownMenu, .timePickerMenu").fadeOut(120);
-        $(".customSelectTrigger, .timeTrigger").removeClass("active");
+        $(".customDropdownMenu, .timePickerMenu, .datePickerMenu").fadeOut(120);
+        $(".customSelectTrigger, .timeTrigger, .dateTrigger").removeClass("active");
 
         if (!isOpen) {
             $(this).addClass("active");
@@ -426,16 +500,16 @@ function bindInputEvents() {
     });
 
     // Abrir/Fechar Time Picker Customizado
-    $(".timeTrigger").on("click", function () {
+    $(".timePickerToggle").on("click", function () {
         const wrap = $(this).closest(".customDropdownWrap");
         const menu = wrap.find(".timePickerMenu");
         const isOpen = menu.is(":visible");
 
-        $(".customDropdownMenu, .timePickerMenu").fadeOut(120);
-        $(".customSelectTrigger, .timeTrigger").removeClass("active");
+        $(".customDropdownMenu, .timePickerMenu, .datePickerMenu").fadeOut(120);
+        $(".customSelectTrigger, .timeTrigger, .dateTrigger").removeClass("active");
 
         if (!isOpen) {
-            $(this).addClass("active");
+            $(this).closest(".timeTrigger").addClass("active");
             menu.css("display", "grid").hide().fadeIn(140);
         }
     });
@@ -454,7 +528,91 @@ function bindInputEvents() {
         const formatted = `${h}:${m}`;
 
         $(`#${fieldId}`).val(formatted);
-        $(`#label_${fieldId}`).text(formatted);
+        $(`#${fieldId}_text`).val(formatted);
+        wrap.closest(".inputGroup").removeClass("has-error");
+    });
+
+    $(".timeTextInput").on("input change", function () {
+        const value = $(this).val().trim();
+        const wrap = $(this).closest(".customDropdownWrap");
+        const fieldId = wrap.data("time-id");
+
+        if (!value) {
+            $(`#${fieldId}`).val("");
+            wrap.closest(".inputGroup").removeClass("has-error");
+            return;
+        }
+
+        if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return;
+
+        $(`#${fieldId}`).val(value);
+        wrap.find(".hourCell, .minCell").each(function () {
+            const selectedValue = $(this).hasClass("hourCell") ? value.slice(0, 2) : value.slice(3, 5);
+            $(this).toggleClass("selected", $(this).data("val") === selectedValue);
+        });
+        wrap.closest(".inputGroup").removeClass("has-error");
+    });
+
+    // Abrir/Fechar Date Picker Customizado
+    $(".datePickerToggle").on("click", function () {
+        const wrap = $(this).closest(".customDropdownWrap");
+        const menu = wrap.find(".datePickerMenu");
+        const isOpen = menu.is(":visible");
+
+        $(".customDropdownMenu, .timePickerMenu, .datePickerMenu").fadeOut(120);
+        $(".customSelectTrigger, .timeTrigger, .dateTrigger").removeClass("active");
+
+        if (!isOpen) {
+            $(this).closest(".dateTrigger").addClass("active");
+            menu.css("display", "grid").hide().fadeIn(140, function () {
+                menu.find(".dateCell.selected").each(function () {
+                    const column = $(this).closest(".dateColumn");
+                    column.scrollTop(this.offsetTop - column.height() / 2);
+                });
+            });
+        }
+    });
+
+    // Selecionar Dia, Mês ou Ano
+    $(".dateCell").on("click", function () {
+        const wrap = $(this).closest(".customDropdownWrap");
+        const fieldId = wrap.data("date-id");
+        const part = $(this).closest(".dateColumn").data("part");
+        const parts = {};
+
+        wrap.find(".dateColumn").each(function () {
+            parts[$(this).data("part")] = Number($(this).find(".dateCell.selected").data("value"));
+        });
+        parts[part] = Number($(this).data("value"));
+
+        const lastDay = new Date(parts.year, parts.month, 0).getDate();
+        parts.day = Math.min(parts.day, lastDay);
+
+        updateDatePickerCells(wrap, parts);
+
+        const formatted = `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+        $(`#${fieldId}`).val(formatted);
+        $(`#${fieldId}_text`).val(`${String(parts.day).padStart(2, "0")}/${String(parts.month).padStart(2, "0")}/${parts.year}`);
+        wrap.closest(".inputGroup").removeClass("has-error");
+    });
+
+    $(".dateTextInput").on("input change", function () {
+        const value = $(this).val().trim();
+        const wrap = $(this).closest(".customDropdownWrap");
+        const fieldId = wrap.data("date-id");
+        const parsed = parseDateInput(value);
+
+        if (!value) {
+            $(`#${fieldId}`).val("");
+            wrap.closest(".inputGroup").removeClass("has-error");
+            return;
+        }
+
+        if (!parsed) return;
+
+        $(`#${fieldId}`).val(parsed.iso);
+        updateDatePickerCells(wrap, parsed);
+        wrap.closest(".inputGroup").removeClass("has-error");
     });
 
     // Mostrar / Ocultar Senha
@@ -474,8 +632,28 @@ function bindInputEvents() {
     // Atualização do Range Slider
     $(".rangeControl").on("input", function () {
         const id = $(this).attr("id");
-        const unit = $(this).data("unit") || "";
-        $(`#val_${id}`).text(`${$(this).val()}${unit}`);
+        $(`#${id}_value`).val($(this).val());
+        $(this).closest(".inputGroup").removeClass("has-error");
+    });
+
+    $(".rangeValueInput").on("input", function () {
+        if (!this.value || !this.validity.valid) return;
+
+        const id = this.id.replace(/_value$/, "");
+        $(`#${id}`).val(this.value).trigger("input");
+    }).on("change", function () {
+        const group = $(this).closest(".inputGroup");
+        const range = $(`#${this.id.replace(/_value$/, "")}`);
+
+        if (!this.value || !this.validity.valid) {
+            if (group.data("required") === true || group.data("required") === "true" || this.value) {
+                group.addClass("has-error");
+            }
+            return;
+        }
+
+        range.val(this.value).trigger("input");
+        group.removeClass("has-error");
     });
 
     // Sincronização Color Picker -> HEX & RGB
@@ -561,8 +739,6 @@ function submitInputModal() {
             case "text":
             case "password":
             case "textarea":
-            case "date":
-            case "time":
             case "select":
                 value = $(`#${fieldId}`).val();
                 if (field.required && (!value || String(value).trim() === "")) {
@@ -571,15 +747,40 @@ function submitInputModal() {
                 }
                 break;
 
-            case "number":
-            case "range":
-                const rawNum = $(`#${fieldId}`).val();
-                if (field.required && (rawNum === "" || isNaN(Number(rawNum)))) {
+            case "date": {
+                const rawDate = $(`#${fieldId}_text`).val().trim();
+                const parsedDate = parseDateInput(rawDate);
+                value = parsedDate ? parsedDate.iso : null;
+                if ((field.required && !parsedDate) || (rawDate && !parsedDate)) {
                     hasError = true;
                     groupEl.addClass("has-error");
                 }
-                value = rawNum !== "" ? Number(rawNum) : null;
                 break;
+            }
+
+            case "time": {
+                const rawTime = $(`#${fieldId}_text`).val().trim();
+                const validTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime);
+                value = validTime ? rawTime : null;
+                if ((field.required && !validTime) || (rawTime && !validTime)) {
+                    hasError = true;
+                    groupEl.addClass("has-error");
+                }
+                break;
+            }
+
+            case "number":
+            case "range": {
+                const numericInput = field.type === "range" ? $(`#${fieldId}_value`) : $(`#${fieldId}`);
+                const rawNum = numericInput.val();
+                const validNum = rawNum !== "" && Number.isFinite(Number(rawNum)) && numericInput[0].validity.valid;
+                if ((field.required && !validNum) || (rawNum !== "" && !validNum)) {
+                    hasError = true;
+                    groupEl.addClass("has-error");
+                }
+                value = validNum ? Number(rawNum) : null;
+                break;
+            }
 
             case "color":
             case "rgb":
@@ -724,8 +925,7 @@ $(function () {
                             { label: "Organização Ilegal", value: "ilegal" },
                             { label: "Governamental / Polícia", value: "gov" }
                         ]},
-                        { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" },
-                        { id: "date", type: "date", label: "", placeholder: "", maxLength: 250, size: "100" }
+                        { id: "regras", type: "textarea", label: "Observações Internas", placeholder: "Digite os detalhes...", maxLength: 250, size: "100" }
                     ]
                 },
                 // PAINEL DA DIREITA
@@ -735,6 +935,7 @@ $(function () {
                     title: "Estética & Permissões",
                     subtitle: "Customização visual e taxas",
                     inputs: [
+                        { id: "data", type: "date", label: "Data", size: "100" },
                         { id: "cor_neon", type: "rgb", label: "Cor do Blip e Uniforme (RGB)", default: "#1FA5DE", size: "100" },
                         { id: "imposto", type: "range", label: "Taxa da Lavagem", min: 0, max: 100, default: 30, unit: "%", size: "100" },
                         { id: "permissoes", type: "checkbox", label: "Permissões do Cargo", size: "100", default: ["bau", "garagem"], options: [
@@ -837,6 +1038,7 @@ $(function () {
                         subtitle: "Preferências",
                         inputs: [
                             { id: "cargo_centro", type: "select", label: "Cargo", size: "100", default: "membro", options: [{ label: "Membro", value: "membro" }, { label: "Líder", value: "lider" }] },
+                            { id: "horario_centro", type: "time", label: "Horário", default: "20:00", size: "100" },
                             { id: "status_centro", type: "switch", label: "Ativo", placeholder: "Habilitar", default: true, size: "100" }
                         ]
                     },
@@ -845,6 +1047,7 @@ $(function () {
                         title: "3. Customização",
                         subtitle: "Cores e taxas",
                         inputs: [
+                            { id: "data_dir", type: "date", label: "Data", size: "100" },
                             { id: "cor_dir", type: "rgb", label: "Cor (RGB)", default: "#1FA5DE", size: "100" },
                             { id: "comissao_dir", type: "range", label: "Comissão", min: 0, max: 50, default: 10, unit: "%", size: "100" }
                         ]
